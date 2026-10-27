@@ -28,7 +28,11 @@ def b2u(b: Bool) -> U32:
 def bidx(+m: U32) -> U32:
   (b2u(U32.is_zero((m .&. 128 : U32))) + b2u(U32.is_zero((m .&. 32896 : U32))) + b2u(U32.is_zero((m .&. 8421504 : U32))) : U32)
 
-# The bytes of a word at or above byte i's place.
+# The bytes of a word at or above byte i's place. The first word of a search
+# sets the bytes below the start to 0xFF before the zero-byte test (not the
+# flags after it): zb is exact only at its lowest zero byte, and a match below
+# the start would otherwise borrow and flag the byte at the start (found by the
+# proof agent: "A@BC" searched for 'A' from 1).
 def low(+i: U32) -> U32:
   U32.shln(4294967295, U32.to_nat(((i .&. 3 : U32) << 3n : U32)))
 
@@ -62,7 +66,8 @@ def find.go(n: Nat, z: Bool, r: Array<U32> & U32, +wi: U32, +m: U32, +rc: U32) -
 def find.start(n: Nat, r: Array<U32> & U32, +from: U32, +rc: U32) -> Array<U32> & U32:
   (a, +w) = r
   +wi = (from >> 2n : U32)
-  +m = (zb((w .^. rc : U32)) .&. low(from) : U32)
+  +lo = U32.not(low(from))
+  +m = zb(((w .^. rc : U32) .|. lo : U32))
   find.go(n, U32.is_zero(m), Array.get(U32, a, (wi + 1 : U32)), wi, m, rc)
 
 def find.k(+len: U32, r: Array<U32> & U32) -> D.Bytes & U32:
@@ -90,7 +95,8 @@ def find2.go(n: Nat, z: Bool, r: Array<U32> & U32, +wi: U32, +m: U32, +r1: U32, 
 def find2.start(n: Nat, r: Array<U32> & U32, +from: U32, +r1: U32, +r2: U32) -> Array<U32> & U32:
   (a, +w) = r
   +wi = (from >> 2n : U32)
-  +m = ((zb((w .^. r1 : U32)) .|. zb((w .^. r2 : U32)) : U32) .&. low(from) : U32)
+  +lo = U32.not(low(from))
+  +m = (zb(((w .^. r1 : U32) .|. lo : U32)) .|. zb(((w .^. r2 : U32) .|. lo : U32)) : U32)
   find2.go(n, U32.is_zero(m), Array.get(U32, a, (wi + 1 : U32)), wi, m, r1, r2)
 
 # The first index j with from <= j < to where byte j is c1 or c2; to if none.

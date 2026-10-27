@@ -67,6 +67,14 @@ def apps(+k: Nat, ss: List<&2, U32>) -> Bool:
     case Con{+s, t}:
       app_ok(k, s, 0) && app_ok(k, s, 1) && app_ok(k, s, 3) && app_ok(k, s, 5) && app_ok(k, s, 9) && apps(k, t)
 
+# A byte equal to c just below the start and c xor 1 at the start: the
+# zero-byte test's borrow flagged the start (the bug the proof agent found).
+def borrow(+xs: List<&2, U32>, +i: U32, +j: U32, +c: U32) -> Bool:
+  U32.is_eq(Pair.snd(D.Bytes, U32, F.find(of_list.go(xs, B.empty(1n)), i, j, c)), Pair.snd(D.Bytes, U32, B.find(of_list.go(xs, B.empty(1n)), i, j, c)))
+
+def borrow2(+xs: List<&2, U32>, +i: U32, +j: U32, +c1: U32, +c2: U32) -> Bool:
+  U32.is_eq(Pair.snd(D.Bytes, U32, F.find2(of_list.go(xs, B.empty(1n)), i, j, c1, c2)), Pair.snd(D.Bytes, U32, B.find2(of_list.go(xs, B.empty(1n)), i, j, c1, c2)))
+
 def main() -> List<Bool>:
   [ finds_all(range(23n))
   , apps(0n, range(12n))
@@ -75,4 +83,10 @@ def main() -> List<Bool>:
   , apps(3n, range(12n))
   , apps(4n, range(12n))
   , apps(7n, range(12n))
+  , borrow([65, 64, 66, 67], 1, 4, 65)
+  , borrow2([65, 64, 66, 67], 1, 4, 65, 90)
+  , borrow([9, 8, 66, 67, 9, 8, 7, 1], 1, 8, 9)
+  , borrow([9, 9, 8, 7, 1, 2, 3, 4], 2, 8, 9)
+  , borrow([0, 1, 0, 1, 0, 1, 2, 3], 1, 8, 0)
+  , borrow2([10, 11, 9, 8, 1, 2, 3, 4], 1, 8, 10, 9)
   ]
