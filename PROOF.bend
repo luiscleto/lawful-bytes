@@ -1,6 +1,7 @@
 import Base
 import ./defs.bend as D
 import ./bytes.bend as B
+import ./fast.bend as FA
 import ./LAWS.bend as L
 import ./proof_core.bend as C
 import ./proof_ops.bend as O
@@ -10,6 +11,9 @@ import ./proof_same.bend as S
 import ./proof_grow.bend as G
 import ./proof_shift.bend as H
 import ./proof_list.bend as Q
+import ./proof_fast_find.bend as FF
+import ./proof_fast_find2.bend as FF2
+import ./proof_fast_append.bend as FX
 
 # Proofs of the laws: `def L.name` proves `law name` of LAWS.bend. A Bytes can
 # be used once, so each law about one goes through its mirror (C.bmirror):
@@ -444,3 +448,76 @@ def L.list_eq_true(xs, ys, h):
 
 def L.list_eq_refl(xs):
   Q.list_eq_refl(xs)
+
+# Fast versions (fast.bend)
+# =========================
+
+def fast_find.go(-b: D.Bytes, +d: Nat, +from: U32, +to: U32, +c: U32, h: {D.ok(b, d) == True{} : Bool}, hft: {U32.is_le(from, to) == True{} : Bool}, ht: {Nat.is_le(U32.to_nat(to), D.size(b)) == True{} : Bool}, hc: {U32.is_lt(c, 256) == True{} : Bool}, m_b: C.BMirror(b)) ->
+  {FA.find(b, from, to, c) == B.find(b, from, to, c) : D.Bytes & U32}:
+  (+l_b, m2_b) = m_b
+  (+t_b, +e_b) = m2_b
+  %e_b : {FA.find(_, from, to, c) == B.find(_, from, to, c) : D.Bytes & U32}
+  +h_t = C.tr(x => {D.ok(x, d) == True{} : Bool}, b, l_b, t_b, e_b, h)
+  +ht_t = C.tr(x => {Nat.is_le(U32.to_nat(to), D.size(x)) == True{} : Bool}, b, l_b, t_b, e_b, ht)
+  FF.fast_find_t(l_b, t_b, d, from, to, c, h_t, hft, ht_t, hc)
+
+def L.fast_find(b, d, from, to, c, h, hft, ht, hc):
+  fast_find.go(b, d, from, to, c, h, hft, ht, hc, C.bmirror(b))
+
+def fast_find2.go(-b: D.Bytes, +d: Nat, +from: U32, +to: U32, +c1: U32, +c2: U32, h: {D.ok(b, d) == True{} : Bool}, hft: {U32.is_le(from, to) == True{} : Bool}, ht: {Nat.is_le(U32.to_nat(to), D.size(b)) == True{} : Bool}, hc1: {U32.is_lt(c1, 256) == True{} : Bool}, hc2: {U32.is_lt(c2, 256) == True{} : Bool}, m_b: C.BMirror(b)) ->
+  {FA.find2(b, from, to, c1, c2) == B.find2(b, from, to, c1, c2) : D.Bytes & U32}:
+  (+l_b, m2_b) = m_b
+  (+t_b, +e_b) = m2_b
+  %e_b : {FA.find2(_, from, to, c1, c2) == B.find2(_, from, to, c1, c2) : D.Bytes & U32}
+  +h_t = C.tr(x => {D.ok(x, d) == True{} : Bool}, b, l_b, t_b, e_b, h)
+  +ht_t = C.tr(x => {Nat.is_le(U32.to_nat(to), D.size(x)) == True{} : Bool}, b, l_b, t_b, e_b, ht)
+  FF2.fast_find2_t(l_b, t_b, d, from, to, c1, c2, h_t, hft, ht_t, hc1, hc2)
+
+def L.fast_find2(b, d, from, to, c1, c2, h, hft, ht, hc1, hc2):
+  fast_find2.go(b, d, from, to, c1, c2, h, hft, ht, hc1, hc2, C.bmirror(b))
+
+def fast_append_view.go(-dst: D.Bytes, -src: D.Bytes, +d: Nat, +e: Nat, +s: U32, +n: U32, hd: {D.ok(dst, d) == True{} : Bool}, he: {D.ok(src, e) == True{} : Bool}, hs: {Nat.is_le(Nat.add(U32.to_nat(s), U32.to_nat(n)), D.size(src)) == True{} : Bool}, hc: {Nat.is_le(Nat.add(D.size(dst), U32.to_nat(n)), D.cap(dst)) == True{} : Bool}, m_dst: C.BMirror(dst), m_src: C.BMirror(src)) ->
+  {D.view(Pair.fst(D.Bytes, D.Bytes, FA.append(dst, src, s, n))) == List.append(&2, U32, D.view(dst), D.slice(D.view(src), U32.to_nat(s), U32.to_nat(n))) : List<&2, U32>}:
+  (+l_dst, m2_dst) = m_dst
+  (+t_dst, +e_dst) = m2_dst
+  (+l_src, m2_src) = m_src
+  (+t_src, +e_src) = m2_src
+  %e_dst : {D.view(Pair.fst(D.Bytes, D.Bytes, FA.append(_, src, s, n))) == List.append(&2, U32, D.view(_), D.slice(D.view(src), U32.to_nat(s), U32.to_nat(n))) : List<&2, U32>}
+  %e_src : {D.view(Pair.fst(D.Bytes, D.Bytes, FA.append(C.BT(l_dst, t_dst), _, s, n))) == List.append(&2, U32, D.view(C.BT(l_dst, t_dst)), D.slice(D.view(_), U32.to_nat(s), U32.to_nat(n))) : List<&2, U32>}
+  +hd_t = C.tr(x => {D.ok(x, d) == True{} : Bool}, dst, l_dst, t_dst, e_dst, hd)
+  +he_t = C.tr(x => {D.ok(x, e) == True{} : Bool}, src, l_src, t_src, e_src, he)
+  +hs_t = C.tr(x => {Nat.is_le(Nat.add(U32.to_nat(s), U32.to_nat(n)), D.size(x)) == True{} : Bool}, src, l_src, t_src, e_src, hs)
+  +hc_t = C.tr(x => {Nat.is_le(Nat.add(D.size(x), U32.to_nat(n)), D.cap(x)) == True{} : Bool}, dst, l_dst, t_dst, e_dst, hc)
+  FX.fast_append_view_t(l_dst, t_dst, l_src, t_src, d, e, s, n, hd_t, he_t, hs_t, hc_t)
+
+def L.fast_append_view(dst, src, d, e, s, n, hd, he, hs, hc):
+  fast_append_view.go(dst, src, d, e, s, n, hd, he, hs, hc, C.bmirror(dst), C.bmirror(src))
+
+def fast_append_ok.go(-dst: D.Bytes, -src: D.Bytes, +d: Nat, +s: U32, +n: U32, hd: {D.ok(dst, d) == True{} : Bool}, hc: {Nat.is_le(Nat.add(D.size(dst), U32.to_nat(n)), D.cap(dst)) == True{} : Bool}, m_dst: C.BMirror(dst), m_src: C.BMirror(src)) ->
+  {D.ok(Pair.fst(D.Bytes, D.Bytes, FA.append(dst, src, s, n)), d) == True{} : Bool}:
+  (+l_dst, m2_dst) = m_dst
+  (+t_dst, +e_dst) = m2_dst
+  (+l_src, m2_src) = m_src
+  (+t_src, +e_src) = m2_src
+  %e_dst : {D.ok(Pair.fst(D.Bytes, D.Bytes, FA.append(_, src, s, n)), d) == True{} : Bool}
+  %e_src : {D.ok(Pair.fst(D.Bytes, D.Bytes, FA.append(C.BT(l_dst, t_dst), _, s, n)), d) == True{} : Bool}
+  +hd_t = C.tr(x => {D.ok(x, d) == True{} : Bool}, dst, l_dst, t_dst, e_dst, hd)
+  +hc_t = C.tr(x => {Nat.is_le(Nat.add(D.size(x), U32.to_nat(n)), D.cap(x)) == True{} : Bool}, dst, l_dst, t_dst, e_dst, hc)
+  FX.fast_append_ok_t(l_dst, t_dst, l_src, t_src, d, s, n, hd_t, hc_t)
+
+def L.fast_append_ok(dst, src, d, s, n, hd, hc):
+  fast_append_ok.go(dst, src, d, s, n, hd, hc, C.bmirror(dst), C.bmirror(src))
+
+def fast_append_pair.go(-dst: D.Bytes, -src: D.Bytes, +s: U32, +n: U32, m_dst: C.BMirror(dst), m_src: C.BMirror(src)) ->
+  {FA.append(dst, src, s, n) == (Pair.fst(D.Bytes, D.Bytes, FA.append(dst, src, s, n)), src) : D.Bytes & D.Bytes}:
+  (+l_dst, m2_dst) = m_dst
+  (+t_dst, +e_dst) = m2_dst
+  (+l_src, m2_src) = m_src
+  (+t_src, +e_src) = m2_src
+  %e_dst : {FA.append(_, src, s, n) == (Pair.fst(D.Bytes, D.Bytes, FA.append(_, src, s, n)), src) : D.Bytes & D.Bytes}
+  %e_src : {FA.append(C.BT(l_dst, t_dst), _, s, n) == (Pair.fst(D.Bytes, D.Bytes, FA.append(C.BT(l_dst, t_dst), _, s, n)), _) : D.Bytes & D.Bytes}
+  FX.fast_append_pair_t(l_dst, t_dst, l_src, t_src, s, n)
+
+def L.fast_append_pair(dst, src, s, n):
+  fast_append_pair.go(dst, src, s, n, C.bmirror(dst), C.bmirror(src))
+

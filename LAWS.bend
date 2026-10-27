@@ -1,6 +1,7 @@
 import Base
 import ./defs.bend as D
 import ./bytes.bend as B
+import ./fast.bend as FA
 
 # lawful-bytes: bytes packed four to a word in an Array<U32> block. Every law
 # describes an operation by what it does to the list of bytes a Bytes holds
@@ -405,3 +406,68 @@ law list_eq_true:
 law list_eq_refl:
   for xs: List<&2, U32>
   {D.list_eq(xs, xs) == True{} : Bool}
+
+# ==========================================================================
+# Fast versions (fast.bend: a word at a time)
+# ==========================================================================
+
+# The word-at-a-time find gives exactly the reference result (the same Bytes
+# and the same index). c must be a byte value: the search compares 8 bits per
+# byte.
+law fast_find:
+  for b: D.Bytes
+  for d: Nat
+  for from: U32
+  for to: U32
+  for c: U32
+  for h: {D.ok(b, d) == True{} : Bool}
+  for hft: {U32.is_le(from, to) == True{} : Bool}
+  for ht: {Nat.is_le(U32.to_nat(to), D.size(b)) == True{} : Bool}
+  for hc: {U32.is_lt(c, 256) == True{} : Bool}
+  {FA.find(b, from, to, c) == B.find(b, from, to, c) : D.Bytes & U32}
+
+law fast_find2:
+  for b: D.Bytes
+  for d: Nat
+  for from: U32
+  for to: U32
+  for c1: U32
+  for c2: U32
+  for h: {D.ok(b, d) == True{} : Bool}
+  for hft: {U32.is_le(from, to) == True{} : Bool}
+  for ht: {Nat.is_le(U32.to_nat(to), D.size(b)) == True{} : Bool}
+  for hc1: {U32.is_lt(c1, 256) == True{} : Bool}
+  for hc2: {U32.is_lt(c2, 256) == True{} : Bool}
+  {FA.find2(b, from, to, c1, c2) == B.find2(b, from, to, c1, c2) : D.Bytes & U32}
+
+# The word-at-a-time append writes whole words, so up to 3 bytes past the new
+# length differ from the reference's: its laws are append's, on the view.
+law fast_append_view:
+  for dst: D.Bytes
+  for src: D.Bytes
+  for d: Nat
+  for e: Nat
+  for s: U32
+  for n: U32
+  for hd: {D.ok(dst, d) == True{} : Bool}
+  for he: {D.ok(src, e) == True{} : Bool}
+  for hs: {Nat.is_le(Nat.add(U32.to_nat(s), U32.to_nat(n)), D.size(src)) == True{} : Bool}
+  for hc: {Nat.is_le(Nat.add(D.size(dst), U32.to_nat(n)), D.cap(dst)) == True{} : Bool}
+  {D.view(Pair.fst(D.Bytes, D.Bytes, FA.append(dst, src, s, n))) == List.append(&2, U32, D.view(dst), D.slice(D.view(src), U32.to_nat(s), U32.to_nat(n))) : List<&2, U32>}
+
+law fast_append_ok:
+  for dst: D.Bytes
+  for src: D.Bytes
+  for d: Nat
+  for s: U32
+  for n: U32
+  for hd: {D.ok(dst, d) == True{} : Bool}
+  for hc: {Nat.is_le(Nat.add(D.size(dst), U32.to_nat(n)), D.cap(dst)) == True{} : Bool}
+  {D.ok(Pair.fst(D.Bytes, D.Bytes, FA.append(dst, src, s, n)), d) == True{} : Bool}
+
+law fast_append_pair:
+  for dst: D.Bytes
+  for src: D.Bytes
+  for s: U32
+  for n: U32
+  {FA.append(dst, src, s, n) == (Pair.fst(D.Bytes, D.Bytes, FA.append(dst, src, s, n)), src) : D.Bytes & D.Bytes}
