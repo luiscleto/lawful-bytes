@@ -1,0 +1,9 @@
+The 22 laws hold of the reference bodies in `bytes.bend`. Two findings:
+
+1. **`ok`, `empty_ok`, `grow_ok` (and the length guards on `push_view`, `push_ok`, `append_view`, `append_ok`)** — should fix. A well-formed buffer holds at most `4 * 2^29 = 2^31 = 2147483648` bytes, and no legal depth is deeper. The file this package is for is 2.8 GB (`2800000000` bytes, `700000000` words). `2^29 = 536870912` words, so `ok` is false at every allowed depth; `2^30 = 1073741824` words would hold it. The bound is what keeps `len + 1` inside a `U32` today: under `ok`, `size < cap` implies the new length is at most `2^31`.
+
+   Raising the constant alone makes `push_view` false. At depth 30, `cap = 2^32`, so `to_nat(len) < cap` is true for every `U32`, including `len = 4294967295`. `push` stores `(len + 1 : U32) = 0`, `view` is `Nil`, and `List.append(view, [v])` is not.
+
+   Allow `d <= 30` in `ok`, `empty_ok`, and `grow_ok`. On `push_view` and `push_ok`, require `Nat.is_lt(Nat.add(D.size(b), 1n), Nat.pow(2n, 32n))`. On `append_view` and `append_ok`, require `Nat.is_lt(Nat.add(D.size(dst), U32.to_nat(n)), Nat.pow(2n, 32n))`. Reads stay true at that depth: a lookahead index wraps only at `2^32`, and `find`, `same`, and `append` discard that byte.
+
+2. **`first`, `first2`** — minor. The comment says the result is `to` when no index `j` satisfies `from <= j < to`. `Nat.sub(to, from)` truncates, so the result is `from` whenever `from > to`. It is also short of `to` when the list ends before `to`: `first([1, 2], 0n, 5n, 9)` is `2`, and `first([1, 2], 3n, 1n, 9)` is `3`. `find_view` and `find2_view` assume `from <= to` and `to_nat(to) <= size`, so those two laws still match. State `from <= to` and `to <= length(xs)` on the comment, or define the length as `0` when `from > to` and as `to` when the slice runs out.
