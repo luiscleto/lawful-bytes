@@ -12,8 +12,9 @@ buffer), `find` / `find2` (the first of one or two byte values in a range), `sam
 (Base's file I/O uses lists). A buffer holds up to 2^31 bytes.
 
 Status: the laws (`LAWS.bend`, definitions in `defs.bend`) were reviewed in two rounds by Claude,
-GPT and Grok (`reviews/`). `bytes.bend` is the reference implementation (a byte at a time); proofs,
-then a word-at-a-time implementation under the same laws, are next.
+GPT and Grok (`reviews/`), and all 44 are proven (`PROOF.bend`; `./check.sh` runs `bend` and the
+Lean-proven kernel, `--verdict`). `bytes.bend` is the reference implementation (a byte at a time);
+a word-at-a-time implementation proven equal to it is next.
 
 `bend test/spot.bend` evaluates both sides of the laws on small buffers, including garbage padding.
 Builds on `lawful-words` and `lawful-arrays`.
