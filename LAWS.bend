@@ -440,6 +440,23 @@ law fast_find2:
   for hc2: {U32.is_lt(c2, 256) == True{} : Bool}
   {FA.find2(b, from, to, c1, c2) == B.find2(b, from, to, c1, c2) : D.Bytes & U32}
 
+# The fast searches hand back the same Bytes, for any arguments (as find_pair
+# and find2_pair say of the reference).
+law fast_find_pair:
+  for b: D.Bytes
+  for from: U32
+  for to: U32
+  for c: U32
+  {FA.find(b, from, to, c) == (b, Pair.snd(D.Bytes, U32, FA.find(b, from, to, c))) : D.Bytes & U32}
+
+law fast_find2_pair:
+  for b: D.Bytes
+  for from: U32
+  for to: U32
+  for c1: U32
+  for c2: U32
+  {FA.find2(b, from, to, c1, c2) == (b, Pair.snd(D.Bytes, U32, FA.find2(b, from, to, c1, c2))) : D.Bytes & U32}
+
 # The word-at-a-time append writes whole words, so up to 3 bytes past the new
 # length differ from the reference's: its laws are append's, on the view.
 law fast_append_view:

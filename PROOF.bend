@@ -476,6 +476,35 @@ def fast_find2.go(-b: D.Bytes, +d: Nat, +from: U32, +to: U32, +c1: U32, +c2: U32
 def L.fast_find2(b, d, from, to, c1, c2, h, hft, ht, hc1, hc2):
   fast_find2.go(b, d, from, to, c1, c2, h, hft, ht, hc1, hc2, C.bmirror(b))
 
+def fast_find_pair.go(-b: D.Bytes, +from: U32, +to: U32, +c: U32, m_b: C.BMirror(b)) ->
+  {FA.find(b, from, to, c) == (b, Pair.snd(D.Bytes, U32, FA.find(b, from, to, c))) : D.Bytes & U32}:
+  (+l_b, m2_b) = m_b
+  (+t_b, +e_b) = m2_b
+  %e_b : {FA.find(_, from, to, c) == (_, Pair.snd(D.Bytes, U32, FA.find(_, from, to, c))) : D.Bytes & U32}
+  +rc = FA.rep(c)
+  +MN = U32.min(FF.FG(FA.words(from, to), U32.is_zero(FF.M0(t_b, from, rc)), (from >> 2n : U32), FF.M0(t_b, from, rc), rc, t_b), to)
+  %Equal.sym(D.Bytes & U32, FA.find(C.BT(l_b, t_b), from, to, c), (C.BT(l_b, t_b), MN), FF.fast_eq(l_b, t_b, from, to, c)) :
+    {_ == (C.BT(l_b, t_b), Pair.snd(D.Bytes, U32, _)) : D.Bytes & U32}
+  {==}
+
+def L.fast_find_pair(b, from, to, c):
+  fast_find_pair.go(b, from, to, c, C.bmirror(b))
+
+def fast_find2_pair.go(-b: D.Bytes, +from: U32, +to: U32, +c1: U32, +c2: U32, m_b: C.BMirror(b)) ->
+  {FA.find2(b, from, to, c1, c2) == (b, Pair.snd(D.Bytes, U32, FA.find2(b, from, to, c1, c2))) : D.Bytes & U32}:
+  (+l_b, m2_b) = m_b
+  (+t_b, +e_b) = m2_b
+  %e_b : {FA.find2(_, from, to, c1, c2) == (_, Pair.snd(D.Bytes, U32, FA.find2(_, from, to, c1, c2))) : D.Bytes & U32}
+  +r1 = FA.rep(c1)
+  +r2 = FA.rep(c2)
+  +MN = U32.min(FF2.FG2(FA.words(from, to), U32.is_zero(FF2.M02(t_b, from, r1, r2)), (from >> 2n : U32), FF2.M02(t_b, from, r1, r2), r1, r2, t_b), to)
+  %Equal.sym(D.Bytes & U32, FA.find2(C.BT(l_b, t_b), from, to, c1, c2), (C.BT(l_b, t_b), MN), FF2.fast2_eq(l_b, t_b, from, to, c1, c2)) :
+    {_ == (C.BT(l_b, t_b), Pair.snd(D.Bytes, U32, _)) : D.Bytes & U32}
+  {==}
+
+def L.fast_find2_pair(b, from, to, c1, c2):
+  fast_find2_pair.go(b, from, to, c1, c2, C.bmirror(b))
+
 def fast_append_view.go(-dst: D.Bytes, -src: D.Bytes, +d: Nat, +e: Nat, +s: U32, +n: U32, hd: {D.ok(dst, d) == True{} : Bool}, he: {D.ok(src, e) == True{} : Bool}, hs: {Nat.is_le(Nat.add(U32.to_nat(s), U32.to_nat(n)), D.size(src)) == True{} : Bool}, hc: {Nat.is_le(Nat.add(D.size(dst), U32.to_nat(n)), D.cap(dst)) == True{} : Bool}, m_dst: C.BMirror(dst), m_src: C.BMirror(src)) ->
   {D.view(Pair.fst(D.Bytes, D.Bytes, FA.append(dst, src, s, n))) == List.append(&2, U32, D.view(dst), D.slice(D.view(src), U32.to_nat(s), U32.to_nat(n))) : List<&2, U32>}:
   (+l_dst, m2_dst) = m_dst
