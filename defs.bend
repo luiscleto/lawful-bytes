@@ -1,6 +1,6 @@
 import Base
-import ../lawful-words/defs.bend as W
-import ../lawful-arrays/defs.bend as A
+import lawful-words@0.1.0.0/defs.bend as W
+import lawful-arrays@0.1.0.0/defs.bend as A
 
 # lawful-bytes definitions: the Bytes type and what it means. The operations
 # are in bytes.bend, the laws in LAWS.bend.

@@ -1,10 +1,10 @@
 import Base
-import ../lawful-words/defs.bend as W
-import ../lawful-words/proof_nat.bend as N
-import ../lawful-words/proof_u32.bend as U
-import ../lawful-words/proof_bytes.bend as Y
-import ../lawful-words/proof_zb.bend as Z
-import ../lawful-arrays/proof_base.bend as AB
+import lawful-words@0.1.0.0/defs.bend as W
+import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_u32.bend as U
+import lawful-words@0.1.0.0/proof_bytes.bend as Y
+import lawful-words@0.1.0.0/proof_zb.bend as Z
+import lawful-arrays@0.1.0.0/proof_base.bend as AB
 import ./fast.bend as FA
 
 # Or, the broadcast byte, the bytes of the masked first word, and the tables

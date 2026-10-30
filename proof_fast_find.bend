@@ -8,12 +8,12 @@ import ./proof_find.bend as F
 import ./proof_append.bend as X
 import ./proof_shift.bend as H
 import ./proof_fast_word.bend as FW
-import ../lawful-words/defs.bend as W
-import ../lawful-words/proof_nat.bend as N
-import ../lawful-words/proof_u32.bend as U
-import ../lawful-arrays/proof_base.bend as AB
-import ../lawful-arrays/proof_tree.bend as P
-import ../lawful-arrays/defs.bend as A
+import lawful-words@0.1.0.0/defs.bend as W
+import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_u32.bend as U
+import lawful-arrays@0.1.0.0/proof_base.bend as AB
+import lawful-arrays@0.1.0.0/proof_tree.bend as P
+import lawful-arrays@0.1.0.0/defs.bend as A
 
 # fast.bend's find on the mirror C.BT(len, t). FG is find.go as a function of
 # the tree (fg_eq): the word loop answers the offset of the first flagged byte,

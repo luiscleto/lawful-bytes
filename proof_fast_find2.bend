@@ -9,12 +9,12 @@ import ./proof_append.bend as X
 import ./proof_shift.bend as H
 import ./proof_fast_word.bend as FW
 import ./proof_fast_find.bend as FF
-import ../lawful-words/defs.bend as W
-import ../lawful-words/proof_nat.bend as N
-import ../lawful-words/proof_u32.bend as U
-import ../lawful-arrays/proof_base.bend as AB
-import ../lawful-arrays/proof_tree.bend as P
-import ../lawful-arrays/defs.bend as A
+import lawful-words@0.1.0.0/defs.bend as W
+import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_u32.bend as U
+import lawful-arrays@0.1.0.0/proof_base.bend as AB
+import lawful-arrays@0.1.0.0/proof_tree.bend as P
+import lawful-arrays@0.1.0.0/defs.bend as A
 
 # fast.bend's find2 on the mirror, the same way as find (proof_fast_find.bend,
 # whose word and list lemmas are reused): the mask is the or of two flag

@@ -1,7 +1,7 @@
 import Base
 import ./defs.bend as D
-import ../lawful-words/proof_nat.bend as WN
-import ../lawful-words/proof_u32.bend as WU
+import lawful-words@0.1.0.0/proof_nat.bend as WN
+import lawful-words@0.1.0.0/proof_u32.bend as WU
 
 # The pure list laws: first/first2 (search answers) and list_eq. Every
 # variable is reusable, so PROOF.bend can forward the laws here.

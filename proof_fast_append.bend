@@ -7,14 +7,14 @@ import ./proof_core.bend as C
 import ./proof_ops.bend as O
 import ./proof_append.bend as X
 import ./proof_shift.bend as H
-import ../lawful-words/defs.bend as W
-import ../lawful-words/proof_nat.bend as N
-import ../lawful-words/proof_u32.bend as U
-import ../lawful-words/proof_bytes.bend as Y
-import ../lawful-arrays/defs.bend as A
-import ../lawful-arrays/proof_base.bend as AB
-import ../lawful-arrays/proof_tree.bend as P
-import ../lawful-arrays/proof_index.bend as I
+import lawful-words@0.1.0.0/defs.bend as W
+import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_u32.bend as U
+import lawful-words@0.1.0.0/proof_bytes.bend as Y
+import lawful-arrays@0.1.0.0/defs.bend as A
+import lawful-arrays@0.1.0.0/proof_base.bend as AB
+import lawful-arrays@0.1.0.0/proof_tree.bend as P
+import lawful-arrays@0.1.0.0/proof_index.bend as I
 
 # fast.bend's append on the mirror. The first bytes go through bytes.bend's
 # append (X.append_*_t), up to dst's next word boundary; then append.words

@@ -4,12 +4,12 @@ import ./bytes.bend as B
 import ./proof_seq.bend as Q
 import ./proof_core.bend as C
 import ./proof_ops.bend as O
-import ../lawful-words/defs.bend as W
-import ../lawful-words/proof_nat.bend as N
-import ../lawful-words/proof_bytes.bend as Y
-import ../lawful-arrays/proof_base.bend as AB
-import ../lawful-arrays/proof_tree.bend as P
-import ../lawful-arrays/proof_index.bend as I
+import lawful-words@0.1.0.0/defs.bend as W
+import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_bytes.bend as Y
+import lawful-arrays@0.1.0.0/proof_base.bend as AB
+import lawful-arrays@0.1.0.0/proof_tree.bend as P
+import lawful-arrays@0.1.0.0/proof_index.bend as I
 
 # append: n pushes onto dst of bytes s.. of src, and shift, laws on the mirror
 # (named as in proof_ops.bend). The loop lemmas take dst as a mirror that changes

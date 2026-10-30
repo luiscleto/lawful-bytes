@@ -5,13 +5,13 @@ import ./proof_seq.bend as Q
 import ./proof_core.bend as C
 import ./proof_ops.bend as O
 import ./proof_append.bend as X
-import ../lawful-words/defs.bend as W
-import ../lawful-words/proof_nat.bend as N
-import ../lawful-words/proof_u32.bend as U
-import ../lawful-words/proof_bytes.bend as Y
-import ../lawful-arrays/proof_base.bend as AB
-import ../lawful-arrays/proof_tree.bend as P
-import ../lawful-arrays/proof_index.bend as I
+import lawful-words@0.1.0.0/defs.bend as W
+import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_u32.bend as U
+import lawful-words@0.1.0.0/proof_bytes.bend as Y
+import lawful-arrays@0.1.0.0/proof_base.bend as AB
+import lawful-arrays@0.1.0.0/proof_tree.bend as P
+import lawful-arrays@0.1.0.0/proof_index.bend as I
 
 # shift on the mirror. The loop reads byte p = j + k and writes it at j; it
 # keeps len. SGT computes the tree the loop leaves (shift_go_eq), and the view

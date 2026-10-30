@@ -3,13 +3,13 @@ import ./defs.bend as D
 import ./bytes.bend as B
 import ./proof_seq.bend as Q
 import ./proof_core.bend as C
-import ../lawful-words/defs.bend as W
-import ../lawful-words/proof_nat.bend as N
-import ../lawful-words/proof_u32.bend as U
-import ../lawful-arrays/defs.bend as A
-import ../lawful-arrays/proof_base.bend as AB
-import ../lawful-arrays/proof_tree.bend as P
-import ../lawful-arrays/proof_index.bend as I
+import lawful-words@0.1.0.0/defs.bend as W
+import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_u32.bend as U
+import lawful-arrays@0.1.0.0/defs.bend as A
+import lawful-arrays@0.1.0.0/proof_base.bend as AB
+import lawful-arrays@0.1.0.0/proof_tree.bend as P
+import lawful-arrays@0.1.0.0/proof_index.bend as I
 
 # find and find2 on the mirror C.BT(len, t). The loops read one byte ahead:
 # r holds byte j + 1 while hit says whether byte j matched. Each lemma takes r

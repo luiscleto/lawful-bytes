@@ -1,9 +1,9 @@
 import Base
 import ./defs.bend as D
-import ../lawful-words/defs.bend as W
-import ../lawful-words/proof_nat.bend as N
-import ../lawful-words/proof_bytes.bend as Y
-import ../lawful-arrays/proof_base.bend as AB
+import lawful-words@0.1.0.0/defs.bend as W
+import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_bytes.bend as Y
+import lawful-arrays@0.1.0.0/proof_base.bend as AB
 
 # List facts the Bytes proofs need (take, set, append, unpack), for lists of
 # U32. Every variable is reusable.

@@ -1,12 +1,12 @@
 import Base
-import ../lawful-words/defs.bend as W
+import lawful-words@0.1.0.0/defs.bend as W
 import ./defs.bend as D
 import ./fast.bend as FA
 import ./proof_core.bend as C
-import ../lawful-words/proof_nat.bend as N
-import ../lawful-words/proof_u32.bend as U
-import ../lawful-words/proof_zb.bend as Z
-import ../lawful-arrays/proof_base.bend as AB
+import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_u32.bend as U
+import lawful-words@0.1.0.0/proof_zb.bend as Z
+import lawful-arrays@0.1.0.0/proof_base.bend as AB
 import ./proof_fast_w1.bend as W1
 import ./proof_fast_w2.bend as W2
 

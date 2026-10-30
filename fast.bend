@@ -1,5 +1,5 @@
 import Base
-import ../lawful-words/defs.bend as W
+import lawful-words@0.1.0.0/defs.bend as W
 import ./defs.bend as D
 import ./bytes.bend as B
 
