@@ -5,6 +5,7 @@ import ./proof_seq.bend as Q
 import ./proof_core.bend as C
 import lawful-words@0.1.0.0/defs.bend as W
 import lawful-words@0.1.0.0/proof_nat.bend as N
+import lawful-words@0.1.0.0/proof_u32.bend as U
 import lawful-arrays@0.1.0.0/defs.bend as A
 import lawful-arrays@0.1.0.0/proof_base.bend as AB
 import lawful-arrays@0.1.0.0/proof_tree.bend as P
@@ -154,61 +155,218 @@ def step_le(len, t, d, s, m, h, hs):
 # to_list
 # =======
 
+# to_list reads from the last byte back, putting each in front of acc, so its
+# loop is a tail call. The invariant: reading at j = m + s with 1 + m bytes
+# left gives slice(view, s, 1 + m) followed by acc.
+
 law tl_pair:
   for +n: Nat
   for +len: U32
   for +t: P.Tree<U32>
-  for +s: U32
-  {B.to_list.go(n, B.at(C.BT(len, t), s), s) == (C.BT(len, t), Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(n, B.at(C.BT(len, t), s), s))) : D.Bytes & List<&2, U32>}
+  for +j: U32
+  for +acc: List<&2, U32>
+  {B.to_list.go(n, B.at(C.BT(len, t), j), j, acc) == (C.BT(len, t), Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(n, B.at(C.BT(len, t), j), j, acc))) : D.Bytes & List<&2, U32>}
 
-def tl_pair(n, len, t, s):
+def tl_pair(n, len, t, j, acc):
   match n:
     case 0n:
-      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), s), (C.BT(len, t), C.AT(len, t, s)), C.at_pair_t(len, t, s)) :
-        {B.to_list.go(0n, _, s) == (C.BT(len, t), Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(0n, _, s))) : D.Bytes & List<&2, U32>}
+      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), j), (C.BT(len, t), C.AT(len, t, j)), C.at_pair_t(len, t, j)) :
+        {B.to_list.go(0n, _, j, acc) == (C.BT(len, t), Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(0n, _, j, acc))) : D.Bytes & List<&2, U32>}
       {==}
     case 1n+m:
-      +s1 = (s + 1 : U32)
-      +x = C.AT(len, t, s)
-      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), s), (C.BT(len, t), x), C.at_pair_t(len, t, s)) :
-        {B.to_list.go(1n+m, _, s) == (C.BT(len, t), Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(1n+m, _, s))) : D.Bytes & List<&2, U32>}
-      %Equal.sym(D.Bytes & List<&2, U32>, B.to_list.go(m, B.at(C.BT(len, t), s1), s1),
-        (C.BT(len, t), Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(m, B.at(C.BT(len, t), s1), s1))), tl_pair(m, len, t, s1)) :
-        {B.to_list.cons(x, _) == (C.BT(len, t), Pair.snd(D.Bytes, List<&2, U32>, B.to_list.cons(x, _))) : D.Bytes & List<&2, U32>}
-      {==}
+      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), j), (C.BT(len, t), C.AT(len, t, j)), C.at_pair_t(len, t, j)) :
+        {B.to_list.go(1n+m, _, j, acc) == (C.BT(len, t), Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(1n+m, _, j, acc))) : D.Bytes & List<&2, U32>}
+      tl_pair(m, len, t, (j - 1 : U32), C.AT(len, t, j) <> acc)
 
-law tl_view:
-  for +n: Nat
+law append_nil:
+  for +xs: List<&2, U32>
+  {List.append(&2, U32, xs, Nil{}) == xs : List<&2, U32>}
+
+def append_nil(xs):
+  match xs:
+    case Nil{}:
+      {==}
+    case Con{+x, t}:
+      Equal.cong(List<&2, U32>, List<&2, U32>, z => x <> z, List.append(&2, U32, t, Nil{}), t, append_nil(t))
+
+law get_drop:
+  for +xs: List<&2, U32>
+  for +i: Nat
+  for +k: Nat
+  {List.get(&2, U32, List.drop(&2, U32, xs, i), k) == List.get(&2, U32, xs, Nat.add(i, k)) : Maybe<&2, U32>}
+
+def get_drop(xs, i, k):
+  match xs i:
+    case Nil{} _:
+      {==}
+    case Con{x, t} 0n:
+      {==}
+    case Con{x, t} 1n+p:
+      get_drop(t, p, k)
+
+# Taking k + 1 elements then acc is taking k then element k, then acc.
+law take_snoc:
+  for +ys: List<&2, U32>
+  for +k: Nat
+  for +x: U32
+  for +acc: List<&2, U32>
+  for +h: {List.get(&2, U32, ys, k) == Some{x} : Maybe<&2, U32>}
+  {List.append(&2, U32, List.take(&2, U32, ys, 1n+k), acc) == List.append(&2, U32, List.take(&2, U32, ys, k), x <> acc) : List<&2, U32>}
+
+def take_snoc(ys, k, x, acc, h):
+  match ys k:
+    case Nil{} _:
+      Empty.absurd({List.append(&2, U32, List.take(&2, U32, Nil{}, 1n+k), acc) == List.append(&2, U32, List.take(&2, U32, Nil{}, k), x <> acc) : List<&2, U32>},
+        none_some(x, h))
+    case Con{+y, t} 0n:
+      +yx = Equal.cong(Maybe<&2, U32>, U32, m => I.unsome(U32, y, m), Some{y}, Some{x}, h)
+      %Equal.sym(List<&2, U32>, List.take(&2, U32, t, 0n), Nil{}, Q.take_zero(t)) : {y <> List.append(&2, U32, _, acc) == x <> acc : List<&2, U32>}
+      %Equal.sym(U32, y, x, yx) : {_ <> acc == x <> acc : List<&2, U32>}
+      {==}
+    case Con{+y, t} 1n+p:
+      Equal.cong(List<&2, U32>, List<&2, U32>, z => y <> z, List.append(&2, U32, List.take(&2, U32, t, 1n+p), acc),
+        List.append(&2, U32, List.take(&2, U32, t, p), x <> acc), take_snoc(t, p, x, acc, h))
+
+law slice_snoc:
+  for +xs: List<&2, U32>
+  for +i: Nat
+  for +k: Nat
+  for +x: U32
+  for +acc: List<&2, U32>
+  for +h: {List.get(&2, U32, xs, Nat.add(k, i)) == Some{x} : Maybe<&2, U32>}
+  {List.append(&2, U32, D.slice(xs, i, 1n+k), acc) == List.append(&2, U32, D.slice(xs, i, k), x <> acc) : List<&2, U32>}
+
+def slice_snoc(xs, i, k, x, acc, h):
+  +ys = List.drop(&2, U32, xs, i)
+  +g = AB.subst(Nat, z => {List.get(&2, U32, ys, k) == List.get(&2, U32, xs, z) : Maybe<&2, U32>}, Nat.add(i, k), Nat.add(k, i),
+    N.add_comm(i, k), get_drop(xs, i, k))
+  take_snoc(ys, k, x, acc, Equal.trans(Maybe<&2, U32>, List.get(&2, U32, ys, k), List.get(&2, U32, xs, Nat.add(k, i)), Some{x}, g, h))
+
+# Byte j, for j = m + s below len, is element m + s of the view.
+law tl_val:
+  for +m: Nat
   for +len: U32
   for +t: P.Tree<U32>
   for +d: Nat
   for +s: U32
+  for +j: U32
   for +h: {D.ok(C.BT(len, t), d) == True{} : Bool}
-  for +hs: {Nat.is_le(Nat.add(U32.to_nat(s), n), U32.to_nat(len)) == True{} : Bool}
-  {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(n, B.at(C.BT(len, t), s), s)) == D.slice(D.view(C.BT(len, t)), U32.to_nat(s), n) : List<&2, U32>}
+  for +hj: {U32.to_nat(j) == Nat.add(m, U32.to_nat(s)) : Nat}
+  for +hs: {Nat.is_lt(Nat.add(m, U32.to_nat(s)), U32.to_nat(len)) == True{} : Bool}
+  {List.get(&2, U32, D.view(C.BT(len, t)), Nat.add(m, U32.to_nat(s))) == Some{C.AT(len, t, j)} : Maybe<&2, U32>}
 
-def tl_view(n, len, t, d, s, h, hs):
-  match n:
+def tl_val(m, len, t, d, s, j, h, hj, hs):
+  +a = Nat.add(m, U32.to_nat(s))
+  +hi = AB.subst(Nat, z => {Nat.is_lt(z, U32.to_nat(len)) == True{} : Bool}, a, U32.to_nat(j), Equal.sym(Nat, U32.to_nat(j), a, hj), hs)
+  +e = Equal.sym(Maybe<&2, U32>, Some{C.AT(len, t, j)}, List.get(&2, U32, D.view(C.BT(len, t)), U32.to_nat(j)),
+    C.at_view_t(len, t, d, j, C.ok_full(len, t, d, h), C.ok_d(len, t, d, h), C.ok_len(len, t, d, h), hi))
+  AB.subst(Nat, z => {List.get(&2, U32, D.view(C.BT(len, t)), z) == Some{C.AT(len, t, j)} : Maybe<&2, U32>}, U32.to_nat(j), a, hj, e)
+
+# j - 1 for j = 1 + m + s.
+law tl_dec:
+  for +m: Nat
+  for +s: U32
+  for +j: U32
+  for +hj: {U32.to_nat(j) == 1n+Nat.add(m, U32.to_nat(s)) : Nat}
+  {U32.to_nat((j - 1 : U32)) == Nat.add(m, U32.to_nat(s)) : Nat}
+
+def tl_dec(m, s, j, hj):
+  +a = Nat.add(m, U32.to_nat(s))
+  +hle = Equal.trans(Bool, U32.is_le(1, j), Nat.is_le(U32.to_nat(1), U32.to_nat(j)), True{}, U.is_le_to_nat(1, j),
+    AB.subst(Nat, z => {Nat.is_le(U32.to_nat(1), z) == True{} : Bool}, 1n+a, U32.to_nat(j), Equal.sym(Nat, U32.to_nat(j), 1n+a, hj), N.le_zero_l(a)))
+  %Equal.sym(Nat, U32.to_nat((j - 1 : U32)), Nat.sub(U32.to_nat(j), U32.to_nat(1)), U.to_nat_sub_le(j, 1, hle)) : {_ == a : Nat}
+  %Equal.sym(Nat, U32.to_nat(j), 1n+a, hj) : {Nat.sub(_, U32.to_nat(1)) == a : Nat}
+  N.sub_zero(a)
+
+law tl_lt:
+  for +a: Nat
+  for +b: Nat
+  for +h: {Nat.is_lt(1n+a, b) == True{} : Bool}
+  {Nat.is_lt(a, b) == True{} : Bool}
+
+def tl_lt(a, b, h):
+  Equal.trans(Bool, Nat.is_lt(a, b), Nat.is_le(1n+a, b), True{}, Equal.sym(Bool, Nat.is_le(1n+a, b), Nat.is_lt(a, b), N.le_succ_lt(a, b)),
+    N.lt_to_le(1n+a, b, h))
+
+law tl_view:
+  for +m: Nat
+  for +len: U32
+  for +t: P.Tree<U32>
+  for +d: Nat
+  for +s: U32
+  for +j: U32
+  for +acc: List<&2, U32>
+  for +h: {D.ok(C.BT(len, t), d) == True{} : Bool}
+  for +hj: {U32.to_nat(j) == Nat.add(m, U32.to_nat(s)) : Nat}
+  for +hs: {Nat.is_lt(Nat.add(m, U32.to_nat(s)), U32.to_nat(len)) == True{} : Bool}
+  {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(1n+m, B.at(C.BT(len, t), j), j, acc)) == List.append(&2, U32, D.slice(D.view(C.BT(len, t)), U32.to_nat(s), 1n+m), acc) : List<&2, U32>}
+
+def tl_view(m, len, t, d, s, j, acc, h, hj, hs):
+  match m:
     case 0n:
-      +X = List.drop(&2, U32, D.view(C.BT(len, t)), U32.to_nat(s))
-      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), s), (C.BT(len, t), C.AT(len, t, s)), C.at_pair_t(len, t, s)) :
-        {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(0n, _, s)) == List.take(&2, U32, X, 0n) : List<&2, U32>}
-      Equal.sym(List<&2, U32>, List.take(&2, U32, X, 0n), Nil{}, Q.take_zero(X))
-    case 1n+m:
-      +s1 = (s + 1 : U32)
-      +x = C.AT(len, t, s)
+      +x = C.AT(len, t, j)
+      +j1 = (j - 1 : U32)
       +xs = D.view(C.BT(len, t))
-      +G = Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(m, B.at(C.BT(len, t), s1), s1))
-      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), s), (C.BT(len, t), x), C.at_pair_t(len, t, s)) :
-        {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(1n+m, _, s)) == D.slice(xs, U32.to_nat(s), 1n+m) : List<&2, U32>}
-      %Equal.sym(D.Bytes & List<&2, U32>, B.to_list.go(m, B.at(C.BT(len, t), s1), s1), (C.BT(len, t), G), tl_pair(m, len, t, s1)) :
-        {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.cons(x, _)) == D.slice(xs, U32.to_nat(s), 1n+m) : List<&2, U32>}
-      %Equal.sym(List<&2, U32>, D.slice(xs, U32.to_nat(s), 1n+m), x <> D.slice(xs, Nat.add(U32.to_nat(s), 1n), m),
-        slice_cons(xs, U32.to_nat(s), m, x, step_val(len, t, d, s, m, h, hs))) :
-        {x <> G == _ : List<&2, U32>}
-      %step_inc(len, t, d, s, m, h, hs) : {x <> G == x <> D.slice(xs, _, m) : List<&2, U32>}
-      %tl_view(m, len, t, d, s1, h, step_le(len, t, d, s, m, h, hs)) : {x <> G == x <> _ : List<&2, U32>}
+      +ys = List.drop(&2, U32, xs, U32.to_nat(s))
+      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), j), (C.BT(len, t), x), C.at_pair_t(len, t, j)) :
+        {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(1n, _, j, acc)) == List.append(&2, U32, D.slice(xs, U32.to_nat(s), 1n), acc) : List<&2, U32>}
+      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), j1), (C.BT(len, t), C.AT(len, t, j1)), C.at_pair_t(len, t, j1)) :
+        {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(0n, _, j1, x <> acc)) == List.append(&2, U32, D.slice(xs, U32.to_nat(s), 1n), acc) : List<&2, U32>}
+      %Equal.sym(List<&2, U32>, List.append(&2, U32, D.slice(xs, U32.to_nat(s), 1n), acc), List.append(&2, U32, D.slice(xs, U32.to_nat(s), 0n), x <> acc),
+        slice_snoc(xs, U32.to_nat(s), 0n, x, acc, tl_val(0n, len, t, d, s, j, h, hj, hs))) :
+        {x <> acc == _ : List<&2, U32>}
+      %Equal.sym(List<&2, U32>, List.take(&2, U32, ys, 0n), Nil{}, Q.take_zero(ys)) : {x <> acc == List.append(&2, U32, _, x <> acc) : List<&2, U32>}
       {==}
+    case 1n+p:
+      +x = C.AT(len, t, j)
+      +j1 = (j - 1 : U32)
+      +xs = D.view(C.BT(len, t))
+      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), j), (C.BT(len, t), x), C.at_pair_t(len, t, j)) :
+        {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(1n+(1n+p), _, j, acc)) == List.append(&2, U32, D.slice(xs, U32.to_nat(s), 1n+(1n+p)), acc) : List<&2, U32>}
+      %Equal.sym(List<&2, U32>, List.append(&2, U32, D.slice(xs, U32.to_nat(s), 1n+(1n+p)), acc), List.append(&2, U32, D.slice(xs, U32.to_nat(s), 1n+p), x <> acc),
+        slice_snoc(xs, U32.to_nat(s), 1n+p, x, acc, tl_val(1n+p, len, t, d, s, j, h, hj, hs))) :
+        {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(1n+p, B.at(C.BT(len, t), j1), j1, x <> acc)) == _ : List<&2, U32>}
+      tl_view(p, len, t, d, s, j1, x <> acc, h, tl_dec(p, s, j, hj), tl_lt(Nat.add(p, U32.to_nat(s)), U32.to_nat(len), hs))
+
+# to_list(BT, s, n) with k = n bytes: none, or 1 + p read from s + n - 1.
+law tl_view_k:
+  for +k: Nat
+  for +len: U32
+  for +t: P.Tree<U32>
+  for +d: Nat
+  for +s: U32
+  for +n: U32
+  for +h: {D.ok(C.BT(len, t), d) == True{} : Bool}
+  for +hk: {U32.to_nat(n) == k : Nat}
+  for +hs: {Nat.is_le(Nat.add(U32.to_nat(s), U32.to_nat(n)), U32.to_nat(len)) == True{} : Bool}
+  {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(k, B.at(C.BT(len, t), ((s + n : U32) - 1 : U32)), ((s + n : U32) - 1 : U32), Nil{})) == D.slice(D.view(C.BT(len, t)), U32.to_nat(s), k) : List<&2, U32>}
+
+def tl_view_k(k, len, t, d, s, n, h, hk, hs):
+  match k:
+    case 0n:
+      +e = ((s + n : U32) - 1 : U32)
+      +xs = D.view(C.BT(len, t))
+      +ys = List.drop(&2, U32, xs, U32.to_nat(s))
+      %Equal.sym(D.Bytes & U32, B.at(C.BT(len, t), e), (C.BT(len, t), C.AT(len, t, e)), C.at_pair_t(len, t, e)) :
+        {Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(0n, _, e, Nil{})) == D.slice(xs, U32.to_nat(s), 0n) : List<&2, U32>}
+      Equal.sym(List<&2, U32>, List.take(&2, U32, ys, 0n), Nil{}, Q.take_zero(ys))
+    case 1n+p:
+      +e = ((s + n : U32) - 1 : U32)
+      +xs = D.view(C.BT(len, t))
+      +a = Nat.add(p, U32.to_nat(s))
+      +sn = Nat.add(U32.to_nat(s), U32.to_nat(n))
+      +E = Equal.trans(Nat, sn, Nat.add(U32.to_nat(s), 1n+p), 1n+a,
+        Equal.cong(Nat, Nat, z => Nat.add(U32.to_nat(s), z), U32.to_nat(n), 1n+p, hk),
+        Equal.trans(Nat, Nat.add(U32.to_nat(s), 1n+p), 1n+Nat.add(U32.to_nat(s), p), 1n+a, N.add_succ(U32.to_nat(s), p),
+          Equal.cong(Nat, Nat, z => 1n+z, Nat.add(U32.to_nat(s), p), a, N.add_comm(U32.to_nat(s), p))))
+      +hsum = C.add_fits(s, n, d, C.ok_d(len, t, d, h), N.le_trans(sn, U32.to_nat(len), Nat.mul(4n, Nat.pow(2n, d)), hs, C.ok_len(len, t, d, h)))
+      +hj = tl_dec(p, s, (s + n : U32), Equal.trans(Nat, U32.to_nat((s + n : U32)), sn, 1n+a, hsum, E))
+      +hlt = Equal.trans(Bool, Nat.is_lt(a, U32.to_nat(len)), Nat.is_le(1n+a, U32.to_nat(len)), True{},
+        Equal.sym(Bool, Nat.is_le(1n+a, U32.to_nat(len)), Nat.is_lt(a, U32.to_nat(len)), N.le_succ_lt(a, U32.to_nat(len))),
+        AB.subst(Nat, z => {Nat.is_le(z, U32.to_nat(len)) == True{} : Bool}, sn, 1n+a, E, hs))
+      +sl = D.slice(xs, U32.to_nat(s), 1n+p)
+      Equal.trans(List<&2, U32>, Pair.snd(D.Bytes, List<&2, U32>, B.to_list.go(1n+p, B.at(C.BT(len, t), e), e, Nil{})), List.append(&2, U32, sl, Nil{}), sl,
+        tl_view(p, len, t, d, s, e, Nil{}, h, hj, hlt), append_nil(sl))
 
 law to_list_pair_t:
   for +len: U32
@@ -218,7 +376,7 @@ law to_list_pair_t:
   {B.to_list(C.BT(len, t), s, n) == (C.BT(len, t), Pair.snd(D.Bytes, List<&2, U32>, B.to_list(C.BT(len, t), s, n))) : D.Bytes & List<&2, U32>}
 
 def to_list_pair_t(len, t, s, n):
-  tl_pair(U32.to_nat(n), len, t, s)
+  tl_pair(U32.to_nat(n), len, t, ((s + n : U32) - 1 : U32), Nil{})
 
 law to_list_view_t:
   for +len: U32
@@ -231,7 +389,7 @@ law to_list_view_t:
   {Pair.snd(D.Bytes, List<&2, U32>, B.to_list(C.BT(len, t), s, n)) == D.slice(D.view(C.BT(len, t)), U32.to_nat(s), U32.to_nat(n)) : List<&2, U32>}
 
 def to_list_view_t(len, t, d, s, n, h, hs):
-  tl_view(U32.to_nat(n), len, t, d, s, h, hs)
+  tl_view_k(U32.to_nat(n), len, t, d, s, n, h, {==}, hs)
 
 # same
 # ====

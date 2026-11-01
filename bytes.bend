@@ -175,23 +175,21 @@ def of_list.go(xs: List<&2, U32>, b: D.Bytes) -> D.Bytes:
 def of_list(+d: Nat, xs: List<&2, U32>) -> D.Bytes:
   of_list.go(xs, empty(d))
 
-def to_list.cons(+x: U32, r: D.Bytes & List<&2, U32>) -> D.Bytes & List<&2, U32>:
-  (b, t) = r
-  (b, Con{x, t})
-
-# r holds byte s.
-def to_list.go(n: Nat, r: D.Bytes & U32, +s: U32) -> D.Bytes & List<&2, U32>:
+# n more bytes put in front of acc, from byte j down; r holds byte j. A tail
+# call, so the loop runs in constant stack.
+def to_list.go(n: Nat, r: D.Bytes & U32, +j: U32, acc: List<&2, U32>) -> D.Bytes & List<&2, U32>:
   match n:
     case 0n:
       (b, x) = r
-      (b, Nil{})
+      (b, acc)
     case 1n+m:
       (b, +x) = r
-      to_list.cons(x, to_list.go(m, at(b, (s + 1 : U32)), (s + 1 : U32)))
+      to_list.go(m, at(b, (j - 1 : U32)), (j - 1 : U32), Con{x, acc})
 
-# Bytes s .. s+n-1 as a list (Base's file writes take such lists).
+# Bytes s .. s+n-1 as a list (Base's file writes take such lists), built from
+# the last byte back.
 def to_list(b: D.Bytes, +s: U32, +n: U32) -> D.Bytes & List<&2, U32>:
-  to_list.go(U32.to_nat(n), at(b, s), s)
+  to_list.go(U32.to_nat(n), at(b, ((s + n : U32) - 1 : U32)), ((s + n : U32) - 1 : U32), Nil{})
 
 def at2.fin2(+x: U32, r: D.Bytes & U32) -> D.Bytes & (U32 & U32):
   (b, +y) = r
