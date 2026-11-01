@@ -26,10 +26,10 @@ Published on [BendHub](https://hub.bend-lang.com/name/lawful-bytes) with its law
 an import by name and checks it against the package's hash:
 
 ```python
-import lawful-bytes@0.1.0.0/bytes.bend as B  # the operations
-import lawful-bytes@0.1.0.0/fast.bend as FA  # find, find2 and append, a word at a time
-import lawful-bytes@0.1.0.0/LAWS.bend as L   # the laws, to use in your own proofs
-import lawful-bytes@0.1.0.0/PROOF.bend as P  # their proofs, which a proof using a law needs loaded
+import lawful-bytes@0.1.1.0/bytes.bend as B  # the operations
+import lawful-bytes@0.1.1.0/fast.bend as FA  # find, find2 and append, a word at a time
+import lawful-bytes@0.1.1.0/LAWS.bend as L   # the laws, to use in your own proofs
+import lawful-bytes@0.1.1.0/PROOF.bend as P  # their proofs, which a proof using a law needs loaded
 ```
 
 Versions below 1.0 have laws reviewed by three AI models but not yet by a human expert.
