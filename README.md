@@ -11,11 +11,11 @@ built on it can be proven by reasoning about lists while it runs on words. The w
 Bend fetches these imports from [BendHub](https://hub.bend-lang.com/name/lawful-bytes) by name:
 
 ```python
-import lawful-bytes@0.1.1.0/defs.bend as D   # the Bytes type, and view: its bytes as a list
-import lawful-bytes@0.1.1.0/bytes.bend as B  # the operations
-import lawful-bytes@0.1.1.0/fast.bend as FA  # find, find2 and append, a word at a time
-import lawful-bytes@0.1.1.0/LAWS.bend as L   # the laws, for your own proofs
-import lawful-bytes@0.1.1.0/PROOF.bend as P  # their proofs, needed when a proof uses a law
+import lawful-bytes@0.1.1.1/defs.bend as D   # the Bytes type, and view: its bytes as a list
+import lawful-bytes@0.1.1.1/bytes.bend as B  # the operations
+import lawful-bytes@0.1.1.1/fast.bend as FA  # find, find2 and append, a word at a time
+import lawful-bytes@0.1.1.1/LAWS.bend as L   # the laws, for your own proofs
+import lawful-bytes@0.1.1.1/PROOF.bend as P  # their proofs, needed when a proof uses a law
 ```
 
 A `Bytes` can be used only once, so every read hands the buffer back along with its answer. Each
@@ -23,9 +23,9 @@ pair is taken apart in its own small def. This program returns the first line of
 
 ```python
 import Base
-import lawful-bytes@0.1.1.0/defs.bend as D
-import lawful-bytes@0.1.1.0/bytes.bend as B
-import lawful-bytes@0.1.1.0/fast.bend as FA
+import lawful-bytes@0.1.1.1/defs.bend as D
+import lawful-bytes@0.1.1.1/bytes.bend as B
+import lawful-bytes@0.1.1.1/fast.bend as FA
 
 # r holds the buffer and the index of its first newline.
 def first_line.fin(r: D.Bytes & U32) -> List<&2, U32>:
@@ -92,7 +92,7 @@ A `Bytes` can be used only once in a proof as well. To apply several laws to one
 through the mirror in `proof_core.bend` (`bmirror`).
 
 The laws are proven. Below version 1.0 they have been reviewed by AI models but not yet by a human
-expert. [docs/LAWS.md](docs/LAWS.md) lists every law in plain words.
+expert. [docs/LAWS.md](https://github.com/luiscleto/lawful-bytes/blob/main/docs/LAWS.md) lists every law in plain words.
 
 ## License
 
